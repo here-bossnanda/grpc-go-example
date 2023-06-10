@@ -1,2 +1,3 @@
 # grpc-go-example
-implementation grpc in golang
+
+simple implementation grpc in golang
