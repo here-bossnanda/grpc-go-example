@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package calculator;
+
+option go_package = "github.com/here-bossnanda/grpc-go-example";
+
+message AVGRequest {
+  int32 number = 1;
+}
+
+message AVGResponse {
+  double result = 1;
+}
