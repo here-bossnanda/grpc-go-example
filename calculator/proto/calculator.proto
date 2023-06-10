@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package calculator;
+
+option go_package = "github.com/here-bossnanda/grpc-go-example";
+
+import "sum.proto";
+
+service ServiceCalculator {
+  rpc Sum(SumRequest) returns (SumResponse);
+}
+
