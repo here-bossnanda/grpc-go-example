@@ -9,7 +9,7 @@ import (
 	pb "github.com/here-bossnanda/grpc-go-example/calculator/proto"
 )
 
-var addr string = "0.0.0.0:9001"
+var addr string = "0.0.0.0:9002"
 
 func main() {
 	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -20,5 +20,6 @@ func main() {
 
 	c := pb.NewServiceCalculatorClient(conn)
 
-	doSum(c)
+	// doSum(c)
+	doPrimes(c)
 }

@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ServiceCalculatorClient interface {
 	Sum(ctx context.Context, in *SumRequest, opts ...grpc.CallOption) (*SumResponse, error)
+	Prime(ctx context.Context, in *PrimeRequest, opts ...grpc.CallOption) (ServiceCalculator_PrimeClient, error)
 }
 
 type serviceCalculatorClient struct {
@@ -42,11 +43,44 @@ func (c *serviceCalculatorClient) Sum(ctx context.Context, in *SumRequest, opts 
 	return out, nil
 }
 
+func (c *serviceCalculatorClient) Prime(ctx context.Context, in *PrimeRequest, opts ...grpc.CallOption) (ServiceCalculator_PrimeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ServiceCalculator_ServiceDesc.Streams[0], "/calculator.ServiceCalculator/Prime", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &serviceCalculatorPrimeClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type ServiceCalculator_PrimeClient interface {
+	Recv() (*PrimeResponse, error)
+	grpc.ClientStream
+}
+
+type serviceCalculatorPrimeClient struct {
+	grpc.ClientStream
+}
+
+func (x *serviceCalculatorPrimeClient) Recv() (*PrimeResponse, error) {
+	m := new(PrimeResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // ServiceCalculatorServer is the server API for ServiceCalculator service.
 // All implementations must embed UnimplementedServiceCalculatorServer
 // for forward compatibility
 type ServiceCalculatorServer interface {
 	Sum(context.Context, *SumRequest) (*SumResponse, error)
+	Prime(*PrimeRequest, ServiceCalculator_PrimeServer) error
 	mustEmbedUnimplementedServiceCalculatorServer()
 }
 
@@ -56,6 +90,9 @@ type UnimplementedServiceCalculatorServer struct {
 
 func (UnimplementedServiceCalculatorServer) Sum(context.Context, *SumRequest) (*SumResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Sum not implemented")
+}
+func (UnimplementedServiceCalculatorServer) Prime(*PrimeRequest, ServiceCalculator_PrimeServer) error {
+	return status.Errorf(codes.Unimplemented, "method Prime not implemented")
 }
 func (UnimplementedServiceCalculatorServer) mustEmbedUnimplementedServiceCalculatorServer() {}
 
@@ -88,6 +125,27 @@ func _ServiceCalculator_Sum_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ServiceCalculator_Prime_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(PrimeRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ServiceCalculatorServer).Prime(m, &serviceCalculatorPrimeServer{stream})
+}
+
+type ServiceCalculator_PrimeServer interface {
+	Send(*PrimeResponse) error
+	grpc.ServerStream
+}
+
+type serviceCalculatorPrimeServer struct {
+	grpc.ServerStream
+}
+
+func (x *serviceCalculatorPrimeServer) Send(m *PrimeResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // ServiceCalculator_ServiceDesc is the grpc.ServiceDesc for ServiceCalculator service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -100,6 +158,12 @@ var ServiceCalculator_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ServiceCalculator_Sum_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "Prime",
+			Handler:       _ServiceCalculator_Prime_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "calculator.proto",
 }

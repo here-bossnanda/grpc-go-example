@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-var addr string = "0.0.0.0:9001"
+var addr string = "0.0.0.0:9002"
 
 type Server struct {
 	pb.ServiceCalculatorServer
